@@ -8,6 +8,7 @@ from utils import get_usuario
 from handlers.mecanico import registrar_servicio, registrar_pago_pendiente, mis_stats
 from handlers.jefe import resumen_dia, resumen_semana, deudas, registrar_adelanto
 from handlers.admin import registrar_usuario, listar_usuarios, registrar_gasto
+from handlers.consultas import consulta_dia, consulta_moto, editar_servicio, eliminar_servicio
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -56,14 +57,26 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "*Colores:* v=verde, r=roja, a=amarilla, az=azul\n\n"
                 "`/pagar 21r` — saldar deuda\n"
                 "`/pagar 21r 5` — pago parcial\n"
-                "`/mistats` — tus estadísticas del mes\n\n")
+                "`/mistats` — tus estadísticas del mes\n\n"
+                "*Consultas:*\n"
+                "`/dia 20/06/2025` — servicios de un día\n"
+                "`/dia 20/06/2025 25/06/2025` — rango\n"
+                "`/dia 06/2025` — mes completo\n"
+                "`/moto 21r` — historial de una moto\n\n")
 
     if usuario["rol"] in ("admin", "jefe"):
         msg += ("*Reportes:*\n"
                 "`/resumen` — totales del día\n"
                 "`/semana` — resumen semanal\n"
                 "`/deudas` — deudas activas\n"
-                "`/adelanto 5 [Nombre]` — registrar adelanto\n\n")
+                "`/adelanto 5 [Nombre]` — registrar adelanto\n\n"
+                "*Edición:*\n"
+                "`/editar 42 monto 20` — editar campo\n"
+                "`/editar 42 pendiente 0`\n"
+                "`/editar 42 descripcion Texto`\n"
+                "`/editar 42 mecanico Diego`\n"
+                "`/editar 42 moto 21r`\n"
+                "`/eliminar 42` — eliminar servicio\n\n")
 
     if usuario["rol"] == "admin":
         msg += ("*Admin:*\n"
@@ -96,6 +109,14 @@ def main():
     app.add_handler(CommandHandler("adduser", registrar_usuario))
     app.add_handler(CommandHandler("usuarios", listar_usuarios))
     app.add_handler(CommandHandler("gasto", registrar_gasto))
+
+    # Consultas (todos los roles)
+    app.add_handler(CommandHandler("dia", consulta_dia))
+    app.add_handler(CommandHandler("moto", consulta_moto))
+
+    # Edición (admin/jefe)
+    app.add_handler(CommandHandler("editar", editar_servicio))
+    app.add_handler(CommandHandler("eliminar", eliminar_servicio))
 
     # Mensajes de texto (servicios)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, registrar_servicio))

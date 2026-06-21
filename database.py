@@ -51,6 +51,16 @@ def init_db():
             descripcion TEXT,
             registrado_por INTEGER REFERENCES usuarios(id)
         );
+
+        CREATE TABLE IF NOT EXISTS logs (
+            id SERIAL PRIMARY KEY,
+            fecha TIMESTAMP DEFAULT NOW(),
+            accion TEXT NOT NULL,
+            tabla TEXT NOT NULL,
+            registro_id INTEGER,
+            detalle TEXT,
+            registrado_por INTEGER REFERENCES usuarios(id)
+        );
     """)
 
     conn.commit()
