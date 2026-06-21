@@ -10,7 +10,8 @@ async def resumen_dia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     cur.execute("""
         SELECT COALESCE(SUM(monto_total), 0), COALESCE(SUM(monto_pendiente), 0)
-        FROM servicios WHERE DATE(fecha) = CURRENT_DATE AND estado = 'activo'
+        FROM servicios
+        WHERE DATE(created_at) = CURRENT_DATE AND is_active = TRUE AND estado != 'anulado'
     """)
     total, pendiente = cur.fetchone()
     cobrado = float(total) - float(pendiente)
@@ -18,14 +19,15 @@ async def resumen_dia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cur.execute("""
         SELECT u.nombre, COALESCE(SUM(s.monto_total - s.monto_pendiente), 0)
         FROM servicios s JOIN usuarios u ON s.mecanico_id = u.id
-        WHERE DATE(s.fecha) = CURRENT_DATE AND s.estado = 'activo'
+        WHERE DATE(s.created_at) = CURRENT_DATE AND s.is_active = TRUE AND s.estado != 'anulado'
         GROUP BY u.nombre ORDER BY 2 DESC
     """)
     por_mecanico = cur.fetchall()
 
     cur.execute("""
         SELECT tipo, COALESCE(SUM(monto), 0) FROM gastos
-        WHERE DATE(fecha) = CURRENT_DATE GROUP BY tipo
+        WHERE DATE(created_at) = CURRENT_DATE AND is_active = TRUE
+        GROUP BY tipo
     """)
     gastos_rows = dict(cur.fetchall())
     total_gastos = float(gastos_rows.get("gasto", 0))
@@ -57,23 +59,28 @@ async def resumen_semana(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     cur.execute("""
         SELECT COALESCE(SUM(monto_total - monto_pendiente), 0), COALESCE(SUM(monto_pendiente), 0)
-        FROM servicios WHERE fecha >= DATE_TRUNC('week', NOW()) AND estado = 'activo'
+        FROM servicios
+        WHERE created_at >= DATE_TRUNC('week', NOW()) AND is_active = TRUE AND estado != 'anulado'
     """)
     cobrado, pendiente = cur.fetchone()
 
     cur.execute("""
         SELECT u.nombre,
-               COALESCE(SUM(s.monto_total - s.monto_pendiente), 0) as cobrado,
-               COALESCE((SELECT SUM(g.monto) FROM gastos g WHERE g.registrado_por = u.id AND g.tipo = 'adelanto' AND g.fecha >= DATE_TRUNC('week', NOW())), 0) as adelanto
+               COALESCE(SUM(s.monto_total - s.monto_pendiente), 0) AS cobrado,
+               COALESCE((
+                   SELECT SUM(g.monto) FROM gastos g
+                   WHERE g.registrado_por = u.id AND g.tipo = 'adelanto'
+                   AND g.created_at >= DATE_TRUNC('week', NOW()) AND g.is_active = TRUE
+               ), 0) AS adelanto
         FROM servicios s JOIN usuarios u ON s.mecanico_id = u.id
-        WHERE s.fecha >= DATE_TRUNC('week', NOW()) AND s.estado = 'activo'
+        WHERE s.created_at >= DATE_TRUNC('week', NOW()) AND s.is_active = TRUE AND s.estado != 'anulado'
         GROUP BY u.id, u.nombre ORDER BY cobrado DESC
     """)
     por_mecanico = cur.fetchall()
 
     cur.execute("""
         SELECT COALESCE(SUM(monto), 0) FROM gastos
-        WHERE tipo = 'gasto' AND fecha >= DATE_TRUNC('week', NOW())
+        WHERE tipo = 'gasto' AND created_at >= DATE_TRUNC('week', NOW()) AND is_active = TRUE
     """)
     gastos = cur.fetchone()[0]
 
@@ -99,8 +106,9 @@ async def deudas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cur = conn.cursor()
     cur.execute("""
         SELECT tricimoto_num, tricimoto_color, monto_total, monto_pendiente
-        FROM servicios WHERE estado = 'activo' AND monto_pendiente > 0
-        ORDER BY fecha ASC
+        FROM servicios
+        WHERE is_active = TRUE AND estado = 'activo' AND monto_pendiente > 0
+        ORDER BY created_at ASC
     """)
     rows = cur.fetchall()
     cur.close()

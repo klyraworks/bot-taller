@@ -39,9 +39,10 @@ def parsear_fecha(texto):
 
 QUERY_BASE = """
     SELECT s.id, s.tricimoto_num, s.tricimoto_color, s.monto_total, s.monto_pendiente,
-           s.descripcion, u.nombre, s.fecha, s.estado
+           s.descripcion, u.nombre, s.created_at, s.estado
     FROM servicios s
     JOIN usuarios u ON s.mecanico_id = u.id
+    WHERE s.is_active = TRUE
 """
 
 @require_rol("admin", "jefe", "mecanico")
@@ -63,10 +64,10 @@ async def consulta_dia(update: Update, context: ContextTypes.DEFAULT_TYPE):
             cur.close(); conn.close(); return
 
         if tipo == "dia":
-            cur.execute(QUERY_BASE + "WHERE DATE(s.fecha) = %s ORDER BY s.fecha DESC", (fecha.date(),))
+            cur.execute(QUERY_BASE + "AND DATE(s.created_at) = %s ORDER BY s.created_at DESC", (fecha.date(),))
             titulo = f"📅 Servicios del {args[0]}"
         else:
-            cur.execute(QUERY_BASE + "WHERE EXTRACT(MONTH FROM s.fecha) = %s AND EXTRACT(YEAR FROM s.fecha) = %s ORDER BY s.fecha DESC",
+            cur.execute(QUERY_BASE + "AND EXTRACT(MONTH FROM s.created_at) = %s AND EXTRACT(YEAR FROM s.created_at) = %s ORDER BY s.created_at DESC",
                         (fecha.month, fecha.year))
             titulo = f"📅 Servicios de {args[0]}"
 
@@ -76,7 +77,7 @@ async def consulta_dia(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not fecha_ini or not fecha_fin:
             await update.message.reply_text("❌ Formato inválido. Ej: `20/06/2025 25/06/2025`", parse_mode="Markdown")
             cur.close(); conn.close(); return
-        cur.execute(QUERY_BASE + "WHERE DATE(s.fecha) BETWEEN %s AND %s ORDER BY s.fecha DESC",
+        cur.execute(QUERY_BASE + "AND DATE(s.created_at) BETWEEN %s AND %s ORDER BY s.created_at DESC",
                     (fecha_ini.date(), fecha_fin.date()))
         titulo = f"📅 Servicios del {args[0]} al {args[1]}"
 
@@ -113,7 +114,7 @@ async def consulta_moto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     color_nombre = COLORES.get(color, color)
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(QUERY_BASE + "WHERE s.tricimoto_num = %s AND s.tricimoto_color = %s ORDER BY s.fecha DESC LIMIT 20",
+    cur.execute(QUERY_BASE + "AND s.tricimoto_num = %s AND s.tricimoto_color = %s ORDER BY s.created_at DESC LIMIT 20",
                 (num, color_nombre))
     rows = cur.fetchall()
 
@@ -237,7 +238,9 @@ async def eliminar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         cur.close(); conn.close(); return
 
     num, color, monto = row
-    cur.execute("DELETE FROM servicios WHERE id = %s", (sid,))
+    cur.execute("""
+        UPDATE servicios SET is_active = FALSE, deleted_at = NOW(), estado = 'anulado' WHERE id = %s
+    """, (sid,))
     cur.execute("""
         INSERT INTO logs (accion, tabla, registro_id, detalle, registrado_por)
         VALUES ('ELIMINAR', 'servicios', %s, %s, %s)

@@ -96,7 +96,7 @@ async def registrar_pago_pendiente(update: Update, context: ContextTypes.DEFAULT
     cur = conn.cursor()
     cur.execute("""
         SELECT id, monto_pendiente FROM servicios
-        WHERE tricimoto_num = %s AND tricimoto_color = %s AND estado = 'activo' AND monto_pendiente > 0
+        WHERE tricimoto_num = %s AND tricimoto_color = %s AND is_active = TRUE AND estado != 'anulado' AND monto_pendiente > 0
         ORDER BY fecha ASC LIMIT 1
     """, (num, color_nombre))
     row = cur.fetchone()
@@ -133,7 +133,7 @@ async def mis_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cur.execute("""
         SELECT COUNT(*), COALESCE(SUM(monto_total), 0), COALESCE(SUM(monto_pendiente), 0)
         FROM servicios
-        WHERE mecanico_id = %s AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', NOW())
+        WHERE mecanico_id = %s AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
     """, (usuario["id"],))
     count, total, pendiente = cur.fetchone()
     cobrado = float(total) - float(pendiente)
@@ -141,7 +141,7 @@ async def mis_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cur.execute("""
         SELECT COALESCE(SUM(monto), 0) FROM gastos
         WHERE registrado_por = %s AND tipo = 'adelanto'
-        AND DATE_TRUNC('month', fecha) = DATE_TRUNC('month', NOW())
+        AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', NOW())
     """, (usuario["id"],))
     adelantos = cur.fetchone()[0]
 
