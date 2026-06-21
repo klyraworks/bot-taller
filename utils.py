@@ -12,7 +12,7 @@ def parsear_tricimoto(texto):
 def get_usuario(telegram_id):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT id, nombre, rol, activo FROM usuarios WHERE telegram_id = %s", (telegram_id,))
+    cur.execute("SELECT id, nombre, rol, is_active FROM usuarios WHERE telegram_id = %s", (telegram_id,))
     row = cur.fetchone()
     cur.close()
     conn.close()
