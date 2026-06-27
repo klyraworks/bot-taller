@@ -37,7 +37,7 @@ async def registrar_usuario(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def listar_usuarios(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT nombre, rol, activo FROM usuarios ORDER BY rol, nombre")
+    cur.execute("SELECT nombre, rol, is_active FROM usuarios ORDER BY rol, nombre")
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -47,9 +47,9 @@ async def listar_usuarios(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     msg = "👥 *Usuarios:*\n\n"
-    for nombre, rol, activo in rows:
+    for nombre, rol, is_active in rows:
         emoji = {"admin": "👑", "jefe": "⭐", "mecanico": "🔧"}.get(rol, "👤")
-        estado = "" if activo else " _(inactivo)_"
+        estado = "" if is_active else " _(inactivo)_"
         msg += f"{emoji} {nombre} — {rol}{estado}\n"
     await update.message.reply_text(msg, parse_mode="Markdown")
 

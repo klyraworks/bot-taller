@@ -107,7 +107,7 @@ async def deudas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cur.execute("""
         SELECT tricimoto_num, tricimoto_color, monto_total, monto_pendiente
         FROM servicios
-        WHERE is_active = TRUE AND estado = 'activo' AND monto_pendiente > 0
+        WHERE is_active = TRUE AND estado = 'pagado' AND monto_pendiente > 0
         ORDER BY created_at ASC
     """)
     rows = cur.fetchall()

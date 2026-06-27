@@ -32,7 +32,7 @@ def init_db():
             descripcion       TEXT,
             mecanico_id       INTEGER NOT NULL REFERENCES usuarios(id),
             registrado_por    INTEGER NOT NULL REFERENCES usuarios(id),
-            estado            TEXT NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo', 'pagado', 'anulado')),
+            estado            TEXT NOT NULL DEFAULT 'pagado' CHECK (estado IN ('pendiente', 'pagado', 'anulado')),
             is_active         BOOLEAN NOT NULL DEFAULT TRUE,
             created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
             updated_at        TIMESTAMP NOT NULL DEFAULT NOW(),

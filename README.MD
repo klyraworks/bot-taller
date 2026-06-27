@@ -119,21 +119,21 @@ bot-taller/
 | deleted_at | TIMESTAMP | Soft delete |
 
 ### `servicios`
-| Campo | Tipo | Descripción |
-|---|---|---|
-| id | SERIAL PK | |
-| tricimoto_num | TEXT | Número de tricimoto |
-| tricimoto_color | TEXT | Color de tricimoto |
-| monto_total | NUMERIC(10,2) | Total del servicio |
-| monto_pendiente | NUMERIC(10,2) | Saldo pendiente |
-| descripcion | TEXT | Descripción del trabajo |
-| mecanico_id | FK → usuarios | Mecánico asignado |
-| registrado_por | FK → usuarios | Quien registró |
-| estado | TEXT | `activo`, `pagado`, `anulado` |
-| is_active | BOOLEAN | Soft delete flag |
-| created_at | TIMESTAMP | |
-| updated_at | TIMESTAMP | Auto-actualizado por trigger |
-| deleted_at | TIMESTAMP | Soft delete |
+| Campo | Tipo | Descripción                      |
+|---|---|----------------------------------|
+| id | SERIAL PK |                                  |
+| tricimoto_num | TEXT | Número de tricimoto              |
+| tricimoto_color | TEXT | Color de tricimoto               |
+| monto_total | NUMERIC(10,2) | Total del servicio               |
+| monto_pendiente | NUMERIC(10,2) | Saldo pendiente                  |
+| descripcion | TEXT | Descripción del trabajo          |
+| mecanico_id | FK → usuarios | Mecánico asignado                |
+| registrado_por | FK → usuarios | Quien registró                   |
+| estado | TEXT | `pendiente`, `pagado`, `anulado` |
+| is_active | BOOLEAN | Soft delete flag                 |
+| created_at | TIMESTAMP |                                  |
+| updated_at | TIMESTAMP | Auto-actualizado por trigger     |
+| deleted_at | TIMESTAMP | Soft delete                      |
 
 ### `pagos`
 | Campo | Tipo | Descripción |

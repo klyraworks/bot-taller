@@ -175,7 +175,7 @@ async def editar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif campo == "pendiente":
         try:
             nuevo_pendiente = float(valor)
-            estado = "pagado" if nuevo_pendiente == 0 else "activo"
+            estado = "pagado" if nuevo_pendiente == 0 else "pagado"
             cur.execute("UPDATE servicios SET monto_pendiente = %s, estado = %s WHERE id = %s", (nuevo_pendiente, estado, sid))
         except ValueError:
             await update.message.reply_text("❌ Monto inválido"); cur.close(); conn.close(); return
@@ -184,7 +184,7 @@ async def editar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         cur.execute("UPDATE servicios SET descripcion = %s WHERE id = %s", (valor, sid))
 
     elif campo == "mecanico":
-        cur.execute("SELECT id FROM usuarios WHERE LOWER(nombre) = LOWER(%s) AND activo = TRUE", (valor,))
+        cur.execute("SELECT id FROM usuarios WHERE LOWER(nombre) = LOWER(%s) AND is_active = TRUE", (valor,))
         row = cur.fetchone()
         if not row:
             await update.message.reply_text(f"❌ No existe el mecánico *{valor}*", parse_mode="Markdown")

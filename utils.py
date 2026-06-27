@@ -18,7 +18,7 @@ def get_usuario(telegram_id):
     conn.close()
     if not row:
         return None
-    return {"id": row[0], "nombre": row[1], "rol": row[2], "activo": row[3]}
+    return {"id": row[0], "nombre": row[1], "rol": row[2], "is_active": row[3]}
 
 def require_rol(*roles):
     """Decorador que verifica rol antes de ejecutar el handler."""
@@ -28,7 +28,7 @@ def require_rol(*roles):
             if not usuario:
                 await update.message.reply_text("❌ No estás registrado. Contacta al administrador.")
                 return
-            if not usuario["activo"]:
+            if not usuario["is_active"]:
                 await update.message.reply_text("❌ Tu cuenta está desactivada.")
                 return
             if usuario["rol"] not in roles:
