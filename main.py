@@ -9,6 +9,7 @@ from handlers.mecanico import registrar_servicio, registrar_pago_pendiente, mis_
 from handlers.jefe import resumen_dia, resumen_semana, deudas, registrar_adelanto
 from handlers.admin import registrar_usuario, listar_usuarios, registrar_gasto
 from handlers.consultas import consulta_dia, consulta_moto, editar_servicio, eliminar_servicio
+from handlers.reportes import cmd_hoy, cmd_resumen, cmd_resumen_semana, cmd_exportar
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -59,7 +60,10 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "`/pagar 21r 5` — pago parcial\n"
                 "`/mistats` — tus estadísticas del mes\n\n"
                 "*Consultas:*\n"
-                "`/dia 20/06/2025` — servicios de un día\n"
+                "`/hoy` — servicios y resumen de hoy\n"
+                "`/resumen 20/06/2025` — resumen de un día\n"
+                "`/resumen_semana 20/06/2025` — semana de esa fecha\n"
+                "`/dia 20/06/2025` — listado detallado de un día\n"
                 "`/dia 20/06/2025 25/06/2025` — rango\n"
                 "`/dia 06/2025` — mes completo\n"
                 "`/moto 21r` — historial de una moto\n\n")
@@ -76,7 +80,11 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "`/editar 42 descripcion Texto`\n"
                 "`/editar 42 mecanico Diego`\n"
                 "`/editar 42 moto 21r`\n"
-                "`/eliminar 42` — eliminar servicio\n\n")
+                "`/eliminar 42` — eliminar servicio\n\n"
+                "*Exportar:*\n"
+                "`/exportar dia 20/06/2025`\n"
+                "`/exportar semana 20/06/2025`\n"
+                "`/exportar mes 06/2025`\n\n")
 
     if usuario["rol"] == "admin":
         msg += ("*Admin:*\n"
@@ -117,6 +125,14 @@ def main():
     # Edición (admin/jefe)
     app.add_handler(CommandHandler("editar", editar_servicio))
     app.add_handler(CommandHandler("eliminar", eliminar_servicio))
+
+    # Nuevos comandos de consulta (todos los roles)
+    app.add_handler(CommandHandler("hoy", cmd_hoy))
+    app.add_handler(CommandHandler("resumen", cmd_resumen))
+    app.add_handler(CommandHandler("resumen_semana", cmd_resumen_semana))
+
+    # Exportar Excel (admin/jefe)
+    app.add_handler(CommandHandler("exportar", cmd_exportar))
 
     # Mensajes de texto (servicios)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, registrar_servicio))
