@@ -61,11 +61,11 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "`/mistats` — tus estadísticas del mes\n\n"
                 "*Consultas:*\n"
                 "`/hoy` — servicios y resumen de hoy\n"
-                "`/resumen 20/06/2025` — resumen de un día\n"
-                "`/resumen_semana 20/06/2025` — semana de esa fecha\n"
-                "`/dia 20/06/2025` — listado detallado de un día\n"
-                "`/dia 20/06/2025 25/06/2025` — rango\n"
-                "`/dia 06/2025` — mes completo\n"
+                "`/resumen 20/06/2026` — resumen de un día\n"
+                "`/resumen_semana 20/06/2026` — semana de esa fecha\n"
+                "`/dia 20/06/2026` — listado detallado de un día\n"
+                "`/dia 20/06/2026 25/06/2026` — rango\n"
+                "`/dia 06/2026` — mes completo\n"
                 "`/moto 21r` — historial de una moto\n\n")
 
     if usuario["rol"] in ("admin", "jefe"):
@@ -82,9 +82,9 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "`/editar 42 moto 21r`\n"
                 "`/eliminar 42` — eliminar servicio\n\n"
                 "*Exportar:*\n"
-                "`/exportar dia 20/06/2025`\n"
-                "`/exportar semana 20/06/2025`\n"
-                "`/exportar mes 06/2025`\n\n")
+                "`/exportar dia 20/06/2026`\n"
+                "`/exportar semana 20/06/2026`\n"
+                "`/exportar mes 06/2026`\n\n")
 
     if usuario["rol"] == "admin":
         msg += ("*Admin:*\n"
