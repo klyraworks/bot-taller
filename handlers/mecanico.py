@@ -97,7 +97,7 @@ async def registrar_pago_pendiente(update: Update, context: ContextTypes.DEFAULT
     cur.execute("""
         SELECT id, monto_pendiente FROM servicios
         WHERE tricimoto_num = %s AND tricimoto_color = %s AND is_active = TRUE AND estado != 'anulado' AND monto_pendiente > 0
-        ORDER BY fecha ASC LIMIT 1
+        ORDER BY created_at ASC LIMIT 1
     """, (num, color_nombre))
     row = cur.fetchone()
 
