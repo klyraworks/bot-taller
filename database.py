@@ -91,6 +91,10 @@ def init_db():
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trg_usuarios_updated_at ON usuarios;
+        DROP TRIGGER IF EXISTS trg_servicios_updated_at ON servicios;
+        DROP TRIGGER IF EXISTS trg_gastos_updated_at ON gastos;
         
         CREATE TRIGGER trg_usuarios_updated_at
             BEFORE UPDATE ON usuarios
