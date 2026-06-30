@@ -30,7 +30,7 @@ def init_db():
             tricimoto_color   TEXT NOT NULL,
             monto_total       NUMERIC(10,2) NOT NULL CHECK (monto_total >= 0),
             monto_pendiente   NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (monto_pendiente >= 0),
-            descripcion       TEXT DEFAULT 'Sin descripción',s
+            descripcion       TEXT DEFAULT 'Sin descripción',
             mecanico_id       INTEGER NOT NULL REFERENCES usuarios(id),
             registrado_por    INTEGER NOT NULL REFERENCES usuarios(id),
             estado            TEXT NOT NULL DEFAULT 'pagado' CHECK (estado IN ('pendiente', 'pagado', 'anulado')),
