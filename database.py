@@ -12,24 +12,25 @@ def init_db():
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
-            id           SERIAL PRIMARY KEY,
-            telegram_id  BIGINT UNIQUE NOT NULL,
-            username     TEXT,
-            nombre       TEXT NOT NULL,
-            rol          TEXT NOT NULL CHECK (rol IN ('admin', 'jefe', 'mecanico')),
-            is_active    BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at   TIMESTAMP NOT NULL DEFAULT NOW(),
-            updated_at   TIMESTAMP NOT NULL DEFAULT NOW(),
-            deleted_at   TIMESTAMP
+            id            SERIAL PRIMARY KEY,
+            telegram_id   BIGINT UNIQUE NOT NULL,
+            username      TEXT,
+            nombre        TEXT NOT NULL,
+            rol           TEXT NOT NULL CHECK (rol IN ('admin', 'jefe', 'mecanico')),
+            password_hash TEXT,
+            is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+            deleted_at    TIMESTAMP
         );
-
+        
         CREATE TABLE IF NOT EXISTS servicios (
             id                SERIAL PRIMARY KEY,
             tricimoto_num     TEXT NOT NULL,
             tricimoto_color   TEXT NOT NULL,
             monto_total       NUMERIC(10,2) NOT NULL CHECK (monto_total >= 0),
             monto_pendiente   NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (monto_pendiente >= 0),
-            descripcion       TEXT,
+            descripcion       TEXT DEFAULT 'Sin descripción',s
             mecanico_id       INTEGER NOT NULL REFERENCES usuarios(id),
             registrado_por    INTEGER NOT NULL REFERENCES usuarios(id),
             estado            TEXT NOT NULL DEFAULT 'pagado' CHECK (estado IN ('pendiente', 'pagado', 'anulado')),
@@ -38,7 +39,7 @@ def init_db():
             updated_at        TIMESTAMP NOT NULL DEFAULT NOW(),
             deleted_at        TIMESTAMP
         );
-
+        
         CREATE TABLE IF NOT EXISTS pagos (
             id             SERIAL PRIMARY KEY,
             servicio_id    INTEGER NOT NULL REFERENCES servicios(id),
@@ -48,7 +49,7 @@ def init_db():
             created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
             deleted_at     TIMESTAMP
         );
-
+        
         CREATE TABLE IF NOT EXISTS gastos (
             id             SERIAL PRIMARY KEY,
             tipo           TEXT NOT NULL CHECK (tipo IN ('gasto', 'adelanto')),
@@ -60,7 +61,7 @@ def init_db():
             updated_at     TIMESTAMP NOT NULL DEFAULT NOW(),
             deleted_at     TIMESTAMP
         );
-
+        
         CREATE TABLE IF NOT EXISTS logs (
             id             SERIAL PRIMARY KEY,
             accion         TEXT NOT NULL,
@@ -70,7 +71,7 @@ def init_db():
             registrado_por INTEGER REFERENCES usuarios(id),
             created_at     TIMESTAMP NOT NULL DEFAULT NOW()
         );
-
+        
         -- Índices
         CREATE INDEX IF NOT EXISTS idx_servicios_mecanico    ON servicios(mecanico_id);
         CREATE INDEX IF NOT EXISTS idx_servicios_estado      ON servicios(estado);
@@ -81,8 +82,8 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_gastos_created_at     ON gastos(created_at);
         CREATE INDEX IF NOT EXISTS idx_logs_tabla_registro   ON logs(tabla, registro_id);
         CREATE INDEX IF NOT EXISTS idx_logs_created_at       ON logs(created_at);
-
-        -- Trigger para updated_at automático
+        
+        -- Trigger updated_at
         CREATE OR REPLACE FUNCTION set_updated_at()
         RETURNS TRIGGER AS $$
         BEGIN
@@ -90,19 +91,15 @@ def init_db():
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
-
-        DROP TRIGGER IF EXISTS trg_usuarios_updated_at  ON usuarios;
-        DROP TRIGGER IF EXISTS trg_servicios_updated_at ON servicios;
-        DROP TRIGGER IF EXISTS trg_gastos_updated_at    ON gastos;
-
+        
         CREATE TRIGGER trg_usuarios_updated_at
             BEFORE UPDATE ON usuarios
             FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
+        
         CREATE TRIGGER trg_servicios_updated_at
             BEFORE UPDATE ON servicios
             FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
+        
         CREATE TRIGGER trg_gastos_updated_at
             BEFORE UPDATE ON gastos
             FOR EACH ROW EXECUTE FUNCTION set_updated_at();
