@@ -1,10 +1,10 @@
 import re
 from database import get_conn
 
-COLORES = {"v": "verde", "r": "roja", "a": "amarilla", "az": "azul"}
+COLORES = {"v": "verde", "r": "roja", "a": "amarilla", "az": "azul", "rs": "rojo san carlos"}
 
 def parsear_tricimoto(texto):
-    match = re.match(r'^(\d+)(az|v|r|a)$', texto.lower())
+    match = re.match(r'^(\d+)(az|v|r|a)$', texto.loswer())
     if not match:
         return None, None
     return match.group(1), match.group(2)
