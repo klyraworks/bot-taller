@@ -5,39 +5,40 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_conn():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    db_url = os.getenv("LOCAL_DATABASE_URL") if os.getenv("NODE_ENV") == "local" else os.getenv("DATABASE_URL")
+    return psycopg2.connect(db_url)
 
 def init_db():
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
-            id            SERIAL PRIMARY KEY,
-            telegram_id   BIGINT UNIQUE NOT NULL,
-            username      TEXT,
-            nombre        TEXT NOT NULL,
-            rol           TEXT NOT NULL CHECK (rol IN ('admin', 'jefe', 'mecanico')),
-            password_hash TEXT,
-            is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at    TIMESTAMP NOT NULL DEFAULT NOW(),
-            updated_at    TIMESTAMP NOT NULL DEFAULT NOW(),
-            deleted_at    TIMESTAMP
+            id               SERIAL PRIMARY KEY,
+            telegram_id      BIGINT UNIQUE NOT NULL,
+            username         TEXT,
+            nombre           TEXT NOT NULL,
+            rol              TEXT NOT NULL CHECK (rol IN ('admin', 'jefe', 'mecanico')),
+            password_hash    TEXT,
+            is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+            deleted_at       TIMESTAMP
         );
         
         CREATE TABLE IF NOT EXISTS servicios (
-            id                SERIAL PRIMARY KEY,
-            tricimoto_num     TEXT NOT NULL,
-            tricimoto_color   TEXT NOT NULL,
-            monto_total       NUMERIC(10,2) NOT NULL CHECK (monto_total >= 0),
-            monto_pendiente   NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (monto_pendiente >= 0),
-            descripcion       TEXT DEFAULT 'Sin descripción',
-            mecanico_id       INTEGER NOT NULL REFERENCES usuarios(id),
-            registrado_por    INTEGER NOT NULL REFERENCES usuarios(id),
-            estado            TEXT NOT NULL DEFAULT 'pagado' CHECK (estado IN ('pendiente', 'pagado', 'anulado')),
-            is_active         BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
-            updated_at        TIMESTAMP NOT NULL DEFAULT NOW(),
-            deleted_at        TIMESTAMP
+            id                    SERIAL PRIMARY KEY,
+            tricimoto_num         TEXT NOT NULL,
+            tricimoto_compania    TEXT NOT NULL,
+            monto_total           NUMERIC(10,2) NOT NULL CHECK (monto_total >= 0),
+            monto_pendiente       NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (monto_pendiente >= 0),
+            descripcion           TEXT DEFAULT 'Sin descripción',
+            mecanico_id           INTEGER NOT NULL REFERENCES usuarios(id),
+            registrado_por        INTEGER NOT NULL REFERENCES usuarios(id),
+            estado                TEXT NOT NULL DEFAULT 'pagado' CHECK (estado IN ('pendiente', 'pagado', 'anulado')),
+            is_active             BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at            TIMESTAMP NOT NULL DEFAULT NOW(),
+            updated_at            TIMESTAMP NOT NULL DEFAULT NOW(),
+            deleted_at            TIMESTAMP
         );
         
         CREATE TABLE IF NOT EXISTS pagos (
@@ -76,7 +77,7 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_servicios_mecanico    ON servicios(mecanico_id);
         CREATE INDEX IF NOT EXISTS idx_servicios_estado      ON servicios(estado);
         CREATE INDEX IF NOT EXISTS idx_servicios_created_at  ON servicios(created_at);
-        CREATE INDEX IF NOT EXISTS idx_servicios_tricimoto   ON servicios(tricimoto_num, tricimoto_color);
+        CREATE INDEX IF NOT EXISTS idx_servicios_tricimoto   ON servicios(tricimoto_num, tricimoto_compania);
         CREATE INDEX IF NOT EXISTS idx_pagos_servicio        ON pagos(servicio_id);
         CREATE INDEX IF NOT EXISTS idx_gastos_tipo           ON gastos(tipo);
         CREATE INDEX IF NOT EXISTS idx_gastos_created_at     ON gastos(created_at);

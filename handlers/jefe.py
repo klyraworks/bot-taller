@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from database import get_conn
-from utils import require_rol
+from utils import require_rol, COLORES, COMPANIAS
 
 @require_rol("admin", "jefe")
 async def resumen_dia(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -105,7 +105,7 @@ async def deudas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
-        SELECT tricimoto_num, tricimoto_color, monto_total, monto_pendiente
+        SELECT tricimoto_num, tricimoto_compania, monto_total, monto_pendiente
         FROM servicios
         WHERE is_active = TRUE AND estado = 'pagado' AND monto_pendiente > 0
         ORDER BY created_at ASC
@@ -119,8 +119,12 @@ async def deudas(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     msg = "📋 *Deudas pendientes:*\n\n"
-    for num, color, total, pendiente in rows:
-        msg += f"🛺 *{num} {color}* — Debe: ${float(pendiente):.2f} de ${float(total):.2f}\n"
+
+    COMPANIA_A_COLOR = {v: COLORES[k] for k, v in COMPANIAS.items()}
+
+    for num, compania, total, pendiente in rows:
+        color = COMPANIA_A_COLOR.get(compania, "")
+        msg += f"🛺 *{num} {color} [{compania}]* — Debe: ${float(pendiente):.2f} de ${float(total):.2f}\n"
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 

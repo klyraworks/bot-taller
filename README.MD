@@ -58,7 +58,7 @@ bot-taller/
 21r 15 8p Cambio de aceite          # con descripción
 21r 15 8p Cambio de aceite @Diego   # asignado a Diego
 ```
-**Colores:** `v`=verde, `r`=roja, `a`=amarilla, `az`=azul
+**Colores/Compañías:** `v`=Comtrilamana (verde), `r`=19 de Mayo (roja), `a`=Quilotoa (amarilla), `az`=Patria Vuelve (azul), `tx`=San Carlos (roja)
 
 ### Pagos
 ```
@@ -123,7 +123,7 @@ bot-taller/
 |---|---|----------------------------------|
 | id | SERIAL PK |                                  |
 | tricimoto_num | TEXT | Número de tricimoto              |
-| tricimoto_color | TEXT | Color de tricimoto               |
+| tricimoto_compania | TEXT | Compañía de tricimoto            |
 | monto_total | NUMERIC(10,2) | Total del servicio               |
 | monto_pendiente | NUMERIC(10,2) | Saldo pendiente                  |
 | descripcion | TEXT | Descripción del trabajo          |

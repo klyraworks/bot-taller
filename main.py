@@ -55,7 +55,7 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "`21r 15` — registrar servicio\n"
                 "`21r 15 8p` — con pendiente\n"
                 "`21r 15 8p Descripcion @Diego` — completo\n"
-                "*Colores:* v=verde, r=roja, a=amarilla, az=azul\n\n"
+                "*Compañías:* v=Comtrilamana, r=19 de Mayo, a=Quilotoa, az=Patria Vuelve\n\n"
                 "`/pagar 21r` — saldar deuda\n"
                 "`/pagar 21r 5` — pago parcial\n"
                 "`/mistats` — tus estadísticas del mes\n\n"

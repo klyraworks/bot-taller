@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from database import get_conn
-from utils import parsear_tricimoto, COLORES, require_rol
+from utils import parsear_tricimoto, COMPANIAS, COLORES, require_rol
 
 
 @require_rol("admin", "jefe", "mecanico")
@@ -58,17 +58,17 @@ async def registrar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     estado = "pagado" if pendiente > 0 else "pagado"
     cur.execute("""
-                INSERT INTO servicios (tricimoto_num, tricimoto_color, monto_total, monto_pendiente, descripcion,
+                INSERT INTO servicios (tricimoto_num, tricimoto_compania, monto_total, monto_pendiente, descripcion,
                                        mecanico_id, registrado_por, estado)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
                 """,
-                (num, COLORES.get(color, color), monto, pendiente, descripcion, mecanico_id, usuario["id"], estado))
+                (num, COMPANIAS.get(color, color), monto, pendiente, descripcion, mecanico_id, usuario["id"], estado))
     servicio_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
 
-    msg = f"✅ Servicio registrado [#{servicio_id}]\n🛺 Tricimoto: *{num} {COLORES.get(color, color)}*\n💰 Total: *${monto:.2f}*"
+    msg = f"✅ Servicio registrado [#{servicio_id}]\n🛺 Tricimoto: *{num} {COLORES.get(color, color)} ({COMPANIAS.get(color, color)})*\n💰 Total: *${monto:.2f}*"
     if pendiente > 0:
         msg += f" | Pendiente: *${pendiente:.2f}*"
     if descripcion:
@@ -94,7 +94,7 @@ async def registrar_pago_pendiente(update: Update, context: ContextTypes.DEFAULT
         return
 
     monto_parcial = float(partes[2]) if len(partes) > 2 else None
-    color_nombre = COLORES.get(color, color)
+    color_nombre = COMPANIAS.get(color, color)
 
     conn = get_conn()
     cur = conn.cursor()
@@ -102,7 +102,7 @@ async def registrar_pago_pendiente(update: Update, context: ContextTypes.DEFAULT
                 SELECT id, monto_pendiente
                 FROM servicios
                 WHERE tricimoto_num = %s
-                  AND tricimoto_color = %s
+                  AND tricimoto_compania = %s
                   AND is_active = TRUE
                   AND estado != 'anulado' AND monto_pendiente > 0
                 ORDER BY created_at ASC LIMIT 1

@@ -2,15 +2,18 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import ContextTypes
 from database import get_conn
-from utils import parsear_tricimoto, COLORES, require_rol, get_usuario
+from utils import parsear_tricimoto, COMPANIAS, require_rol, get_usuario, COLORES
+
+COMPANIA_A_COLOR = {v: COLORES[k] for k, v in COMPANIAS.items()}
 
 # ─── FORMATO ─────────────────────────────────────────────────────────────────
 
 def formatear_servicio(row):
-    sid, num, color, total, pendiente, desc, mecanico, fecha, estado = row
+    sid, num, compania, total, pendiente, desc, mecanico, fecha, estado = row
     fecha_str = fecha.strftime("%d/%m/%Y %H:%M") if fecha else "?"
     cobrado = float(total) - float(pendiente)
-    linea = f"[#{sid}] *{num} {color}* | Total: ${float(total):.2f} | Cobrado: ${cobrado:.2f}"
+    color = COMPANIA_A_COLOR.get(compania, "")
+    linea = f"[#{sid}] *{num} {color} [{compania}]* | Total: ${float(total):.2f} | Cobrado: ${cobrado:.2f}"
     if float(pendiente) > 0:
         linea += f" | Pendiente: ${float(pendiente):.2f}"
     if desc:
@@ -24,7 +27,6 @@ def formatear_lista(rows):
     return "\n\n".join(formatear_servicio(r) for r in rows)
 
 def parsear_fecha(texto):
-    """Intenta parsear dd/mm/yyyy o mm/yyyy."""
     try:
         return datetime.strptime(texto, "%d/%m/%Y"), "dia"
     except ValueError:
@@ -38,7 +40,7 @@ def parsear_fecha(texto):
 # ─── CONSULTAS ───────────────────────────────────────────────────────────────
 
 QUERY_BASE = """
-    SELECT s.id, s.tricimoto_num, s.tricimoto_color, s.monto_total, s.monto_pendiente,
+    SELECT s.id, s.tricimoto_num, s.tricimoto_compania, s.monto_total, s.monto_pendiente,
            s.descripcion, u.nombre, s.created_at, s.estado
     FROM servicios s
     JOIN usuarios u ON s.mecanico_id = u.id
@@ -85,7 +87,6 @@ async def consulta_dia(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Demasiados argumentos.")
         cur.close(); conn.close(); return
 
-    # Mecánicos solo ven sus propios registros
     rows = cur.fetchall()
     if usuario["rol"] == "mecanico":
         rows = [r for r in rows if r[6] == usuario["nombre"]]
@@ -106,16 +107,17 @@ async def consulta_moto(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Uso: `/moto 21r`", parse_mode="Markdown")
         return
 
-    num, color = parsear_tricimoto(args[0])
+    num, cod = parsear_tricimoto(args[0])
     if not num:
         await update.message.reply_text("❌ Tricimoto inválida. Ej: 21r, 05v, 31az")
         return
 
-    color_nombre = COLORES.get(color, color)
+    compania = COMPANIAS.get(cod, cod)
+    color = COMPANIA_A_COLOR.get(compania, "")
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(QUERY_BASE + "AND s.tricimoto_num = %s AND s.tricimoto_color = %s ORDER BY s.created_at DESC LIMIT 20",
-                (num, color_nombre))
+    cur.execute(QUERY_BASE + "AND s.tricimoto_num = %s AND s.tricimoto_compania = %s ORDER BY s.created_at DESC LIMIT 20",
+                (num, compania))
     rows = cur.fetchall()
 
     if usuario["rol"] == "mecanico":
@@ -124,7 +126,7 @@ async def consulta_moto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cur.close()
     conn.close()
 
-    msg = f"🛺 Historial de *{num} {color_nombre}*\n\n{formatear_lista(rows)}"
+    msg = f"🛺 Historial de *{num} {color} [{compania}]*\n\n{formatear_lista(rows)}"
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 # ─── EDITAR ──────────────────────────────────────────────────────────────────
@@ -160,7 +162,6 @@ async def editar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn = get_conn()
     cur = conn.cursor()
 
-    # Verificar que el servicio existe
     cur.execute("SELECT id FROM servicios WHERE id = %s", (sid,))
     if not cur.fetchone():
         await update.message.reply_text(f"❌ No existe el servicio #{sid}")
@@ -192,14 +193,13 @@ async def editar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         cur.execute("UPDATE servicios SET mecanico_id = %s WHERE id = %s", (row[0], sid))
 
     elif campo == "moto":
-        num, color = parsear_tricimoto(valor)
+        num, cod = parsear_tricimoto(valor)
         if not num:
             await update.message.reply_text("❌ Tricimoto inválida. Ej: 21r, 05v, 31az")
             cur.close(); conn.close(); return
-        cur.execute("UPDATE servicios SET tricimoto_num = %s, tricimoto_color = %s WHERE id = %s",
-                    (num, COLORES.get(color, color), sid))
+        cur.execute("UPDATE servicios SET tricimoto_num = %s, tricimoto_compania = %s WHERE id = %s",
+                    (num, COMPANIAS.get(cod, cod), sid))
 
-    # Log
     cur.execute("""
         INSERT INTO logs (accion, tabla, registro_id, detalle, registrado_por)
         VALUES ('EDITAR', 'servicios', %s, %s, %s)
@@ -230,24 +230,25 @@ async def eliminar_servicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT tricimoto_num, tricimoto_color, monto_total FROM servicios WHERE id = %s", (sid,))
+    cur.execute("SELECT tricimoto_num, tricimoto_compania, monto_total FROM servicios WHERE id = %s", (sid,))
     row = cur.fetchone()
 
     if not row:
         await update.message.reply_text(f"❌ No existe el servicio #{sid}")
         cur.close(); conn.close(); return
 
-    num, color, monto = row
+    num, compania, monto = row
+    color = COMPANIA_A_COLOR.get(compania, "")
     cur.execute("""
         UPDATE servicios SET is_active = FALSE, deleted_at = NOW(), estado = 'anulado' WHERE id = %s
     """, (sid,))
     cur.execute("""
         INSERT INTO logs (accion, tabla, registro_id, detalle, registrado_por)
         VALUES ('ELIMINAR', 'servicios', %s, %s, %s)
-    """, (sid, f"{num} {color} ${float(monto):.2f}", usuario["id"]))
+    """, (sid, f"{num} {color} [{compania}] ${float(monto):.2f}", usuario["id"]))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    await update.message.reply_text(f"🗑️ Servicio #{sid} eliminado: *{num} {color}* ${float(monto):.2f}", parse_mode="Markdown")
+    await update.message.reply_text(f"🗑️ Servicio #{sid} eliminado: *{num} {color} [{compania}]* ${float(monto):.2f}", parse_mode="Markdown")

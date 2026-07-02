@@ -46,7 +46,7 @@ def build_resumen_dia(fecha: datetime, conn):
     neto = cobrado - total_gastos - total_adelantos
 
     cur.execute("""
-        SELECT s.tricimoto_num, s.tricimoto_color, s.monto_total, s.monto_pendiente, s.descripcion, u.nombre
+        SELECT s.tricimoto_num, s.tricimoto_compania, s.monto_total, s.monto_pendiente, s.descripcion, u.nombre
         FROM servicios s JOIN usuarios u ON s.mecanico_id = u.id
         WHERE DATE(s.created_at) = %s AND s.is_active = TRUE AND s.estado != 'anulado'
         ORDER BY s.created_at ASC
@@ -251,7 +251,7 @@ async def cmd_exportar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Consultas
     cur.execute("""
-        SELECT s.id, s.created_at, s.tricimoto_num, s.tricimoto_color,
+        SELECT s.id, s.created_at, s.tricimoto_num, s.tricimoto_compania,
                s.monto_total, s.monto_pendiente, (s.monto_total - s.monto_pendiente) AS cobrado,
                s.descripcion, s.estado, u_mec.nombre AS mecanico, u_reg.nombre AS registrado_por
         FROM servicios s
@@ -263,7 +263,7 @@ async def cmd_exportar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     servicios = cur.fetchall()
 
     cur.execute("""
-        SELECT p.id, p.created_at, s.tricimoto_num, s.tricimoto_color, p.monto, u.nombre AS registrado_por
+        SELECT p.id, p.created_at, s.tricimoto_num, s.tricimoto_compania, p.monto, u.nombre AS registrado_por
         FROM pagos p
         JOIN servicios s ON p.servicio_id = s.id
         JOIN usuarios u ON p.registrado_por = u.id
@@ -340,7 +340,7 @@ async def cmd_exportar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Hoja 1: Servicios
     ws1 = wb.active
     ws1.title = "Servicios"
-    headers_s = ["ID", "Fecha", "Tricimoto", "Color", "Total", "Cobrado", "Pendiente", "Descripción", "Estado", "Mecánico", "Registrado por"]
+    headers_s = ["ID", "Fecha", "Tricimoto", "Compania", "Total", "Cobrado", "Pendiente", "Descripción", "Estado", "Mecánico", "Registrado por"]
     rows_s = [(s[0], s[1].strftime("%d/%m/%Y %H:%M"), s[2], s[3],
                float(s[4]), float(s[6]), float(s[5]), s[7] or "", s[8], s[9], s[10])
               for s in servicios]
